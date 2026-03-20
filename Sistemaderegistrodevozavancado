@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voz Segura - Protocolo Judicial e Feedback</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        :root {
+            --fundo: #0a0f18;
+            --card: #161e2d;
+            --primaria: #3b82f6;
+            --texto: #e2e8f0;
+            --borda: #334155;
+            --alerta: #ef4444;
+            --sucesso: #22c55e;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--fundo);
+            color: var(--texto);
+            margin: 0;
+        }
+
+        .painel-voz {
+            background: #000;
+            border: 2px solid var(--primaria);
+            min-height: 200px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', Courier, monospace;
+            color: #a5f3fc;
+        }
+
+        .dot { width: 10px; height: 10px; background: red; border-radius: 50%; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--fundo); }
+        ::-webkit-scrollbar-thumb { background: var(--borda); border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <header class="text-center mb-8 border-b-2 border-blue-500 pb-4">
+        <h1 class="text-4xl font-bold tracking-tight">VOZ SEGURA <span class="text-sm font-light text-blue-400">v3.0</span></h1>
+        <p class="text-slate-400 mt-2">Protocolo de Documentação Judicial e Feedback de Atendimento</p>
+    </header>
+
+    <!-- Seção de Dados do Protocolo -->
+    <div class="bg-[#161e2d] rounded-xl p-6 border border-slate-700 shadow-xl mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div>
+                <label class="block text-xs font-bold text-blue-400 uppercase mb-2">Nome da Vítima/Cliente</label>
+                <input type="text" id="nomeVitima" class="w-full bg-[#0f172a] border border-slate-600 rounded p-2 text-white outline-none focus:border-blue-500" placeholder="Nome Completo">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-blue-400 uppercase mb-2">Horário</label>
+                <input type="time" id="horaChegada" class="w-full bg-[#0f172a] border border-slate-600 rounded p-2 text-white outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-blue-400 uppercase mb-2">Data</label>
+                <input type="date" id="dataAtendimento" class="w-full bg-[#0f172a] border border-slate-600 rounded p-2 text-white outline-none">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+                <label class="block text-xs font-bold text-blue-400 uppercase mb-2">Análise de Ruído (Coação Ambiental)</label>
+                <select id="ruidoAmbiente" class="w-full bg-[#0f172a] border border-slate-600 rounded p-2 text-white outline-none">
+                    <option value="Silencioso">Silencioso / Ambiente Controlado</option>
+                    <option value="Tráfego Intenso">Tráfego Intenso / Ruído de Rua</option>
+                    <option value="Vozes de Terceiros">Vozes de Terceiros ao Fundo</option>
+                    <option value="Gritos/Tumulto">Gritos ou Tumulto Próximo</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-blue-400 uppercase mb-2">Estado Psicológico</label>
+                <select id="estadoVitima" class="w-full bg-[#0f172a] border border-slate-600 rounded p-2 text-white outline-none">
+                    <option value="Estável">Estável</option>
+                    <option value="Em Choque">Em choque</option>
+                    <option value="Agressivo">Agressivo / Defensivo</option>
+                    <option value="Confuso">Confuso / Desorientado</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Feedback de Atendimento -->
+        <div class="mb-6">
+            <label class="block text-xs font-bold text-blue-400 uppercase mb-3 text-center">Avaliação do Atendimento</label>
+            <div class="flex gap-4 justify-center">
+                <button onclick="setSentiment('good')" id="btnGood" class="flex-1 max-w-[200px] p-3 border border-slate-600 rounded-lg hover:bg-green-900/20 transition-all flex flex-col items-center gap-1 focus:ring-2 focus:ring-green-500">
+                    <span class="text-2xl">😊</span>
+                    <span class="text-sm font-semibold">Gostei</span>
+                </button>
+                <button onclick="setSentiment('bad')" id="btnBad" class="flex-1 max-w-[200px] p-3 border border-slate-600 rounded-lg hover:bg-red-900/20 transition-all flex flex-col items-center gap-1 focus:ring-2 focus:ring-red-500">
+                    <span class="text-2xl">😟</span>
+                    <span class="text-sm font-semibold">Não Gostei</span>
+                </button>
+            </div>
+        </div>
+
+        <label class="block text-xs font-bold text-blue-400 uppercase mb-2">Relato do Ocorrido (Máx. 50 palavras)</label>
+        <textarea id="obsOficial" rows="3" oninput="validateWords()" class="w-full bg-[#0f172a] border border-slate-600 rounded p-3 text-white outline-none resize-none" placeholder="Descreva os pormenores..."></textarea>
+        <div class="flex justify-between mt-1">
+            <span id="wordCountLabel" class="text-[10px] text-slate-500 italic">Palavras: 0/50</span>
+            <span id="warningMsg" class="text-[10px] text-red-500 hidden font-bold uppercase">Limite atingido!</span>
+        </div>
+    </div>
+
+    <!-- Painel de Transcrição -->
+    <div id="statusRec" class="flex items-center gap-2 mb-2 invisible">
+        <div class="dot"></div> <span class="text-xs font-bold text-red-500">TRANSCRIÇÃO EM TEMPO REAL ATIVA</span>
+    </div>
+    <div id="painelVoz" class="painel-voz p-4 rounded-lg border-2 border-blue-500 mb-6 shadow-[0_0_15px_rgba(59,130,246,0.3)]">Sistema pronto para gravar depoimento...</div>
+
+    <!-- Ações -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+        <button id="btnStart" onclick="iniciar()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-lg shadow-lg uppercase transition-all">Abrir Canal de Áudio</button>
+        <button id="btnStop" onclick="parar()" class="hidden bg-slate-600 hover:bg-slate-700 text-white font-bold py-4 rounded-lg shadow-lg uppercase transition-all">Encerrar e Sincronizar</button>
+    </div>
+
+    <!-- Lista de Contatos Recomendados (Personalizado) -->
+    <div class="border-t border-slate-800 pt-8 mb-10">
+        <h3 class="text-center text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Redes de Atendimento e Parceiros</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div class="bg-[#161e2d] p-3 rounded text-[10px] border border-slate-800 text-center text-slate-400">Drogasil / Drogal</div>
+            <div class="bg-[#161e2d] p-3 rounded text-[10px] border border-slate-800 text-center text-slate-400">Herbarium</div>
+            <div class="bg-[#161e2d] p-3 rounded text-[10px] border border-slate-800 text-center text-slate-400">Mundo Verde</div>
+            <div class="bg-[#161e2d] p-3 rounded text-[10px] border border-slate-800 text-center text-slate-400">Zona Cerealista</div>
+            <div class="bg-[#161e2d] p-3 rounded text-[10px] border border-slate-800 text-center text-slate-400">Minas-Brasil</div>
+            <div class="bg-[#161e2d] p-3 rounded text-[10px] border border-slate-800 text-center text-slate-400">Botica Alternativa</div>
+            <div class="bg-[#161e2d] p-3 rounded text-[10px] border border-slate-800 text-center text-slate-400">Raiz Nativa</div>
+            <div class="bg-[#161e2d] p-3 rounded text-[10px] border border-slate-800 text-center text-slate-400">Armazém São Vito</div>
+        </div>
+    </div>
+
+    <div id="resultadoFinal"></div>
+</div>
+
+<script>
+    // Inicialização
+    document.getElementById('dataAtendimento').valueAsDate = new Date();
+    let selectedSentiment = null;
+    let textoFinal = "";
+    
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    const painel = document.getElementById('painelVoz');
+    const btnStart = document.getElementById('btnStart');
+    const btnStop = document.getElementById('btnStop');
+
+    function setSentiment(type) {
+        selectedSentiment = type;
+        document.getElementById('btnGood').style.backgroundColor = type === 'good' ? '#14532d' : 'transparent';
+        document.getElementById('btnBad').style.backgroundColor = type === 'bad' ? '#7f1d1d' : 'transparent';
+    }
+
+    function validateWords() {
+        const el = document.getElementById('obsOficial');
+        const text = el.value.trim();
+        const words = text ? text.split(/\s+/) : [];
+        if (words.length > 50) {
+            el.value = words.slice(0, 50).join(' ');
+            document.getElementById('warningMsg').classList.remove('hidden');
+        } else {
+            document.getElementById('wordCountLabel').innerText = `Palavras: ${words.length}/50`;
+            document.getElementById('warningMsg').classList.add('hidden');
+        }
+    }
+
+    recognition.onstart = () => {
+        document.getElementById('statusRec').classList.remove('invisible');
+        btnStart.classList.add('hidden');
+        btnStop.classList.remove('hidden');
+        painel.innerHTML = "";
+    };
+
+    recognition.onresult = (e) => {
+        let interim = "";
+        for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) textoFinal += e.results[i][0].transcript + ". ";
+            else interim += e.results[i][0].transcript;
+        }
+        painel.innerHTML = `<strong>${textoFinal}</strong><span class="text-slate-500">${interim}</span>`;
+    };
+
+    function iniciar() {
+        if(!document.getElementById('horaChegada').value) {
+            const now = new Date();
+            document.getElementById('horaChegada').value = now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        }
+        recognition.start();
+    }
+
+    function parar() {
+        recognition.stop();
+        document.getElementById('statusRec').classList.add('invisible');
+        btnStart.classList.remove('hidden');
+        btnStop.classList.add('hidden');
+        gerarDocumento();
+    }
+
+    function gerarDocumento() {
+        const nome = document.getElementById('nomeVitima').value || "ANÔNIMO";
+        const logData = new Date().toLocaleString('pt-BR');
+        const avaliacao = selectedSentiment === 'good' ? 'POSITIVA' : (selectedSentiment === 'bad' ? 'NEGATIVA' : 'NÃO INFORMADA');
+
+        const relatorio = `
+============================================================
+           RELATÓRIO VOZ SEGURA - PROTOCOLO V3.0
+============================================================
+ID DO REGISTRO: ${Math.random().toString(36).toUpperCase().substring(2,10)}
+SESSÃO FINALIZADA EM: ${logData}
+
+[IDENTIFICAÇÃO]
+NOME: ${nome}
+DATA: ${document.getElementById('dataAtendimento').value}
+HORA: ${document.getElementById('horaChegada').value}
+
+[DADOS AMBIENTAIS E PSICOLÓGICOS]
+AMBIENTE: ${document.getElementById('ruidoAmbiente').value}
+ESTADO DA VÍTIMA: ${document.getElementById('estadoVitima').value}
+
+[AVALIAÇÃO DE ATENDIMENTO]
+SENTIMENTO: ${avaliacao}
+OBSERVAÇÕES: ${document.getElementById('obsOficial').value}
+
+[TRANSCRIÇÃO DO DEPOIMENTO]
+"${textoFinal.trim() || "Nenhum áudio captado."}"
+
+============================================================
+DOCUMENTO SINCROZINADO DIGITALMENTE.
+============================================================`;
+
+        const blob = new Blob([relatorio], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        
+        document.getElementById('resultadoFinal').innerHTML = `
+            <div class="bg-green-900/20 border border-green-500 p-4 rounded-lg animate-bounce text-center mb-6">
+                <p class="text-green-400 font-bold">✓ Protocolo Judicial Selado com Sucesso!</p>
+                <a href="${url}" download="PROTOCOLO_${nome.replace(/ /g,'_')}.txt" class="mt-3 inline-block bg-green-600 px-6 py-2 rounded font-bold hover:bg-green-700 transition-colors">Baixar Relatório Oficial (.txt)</a>
+            </div>
+        `;
+    }
+</script>
+</body>
+</html>
