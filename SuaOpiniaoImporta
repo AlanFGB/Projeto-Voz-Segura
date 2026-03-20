@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliação de Atendimento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .rating-card {
+            transition: all 0.3s ease;
+        }
+        .rating-card:hover {
+            transform: translateY(-2px);
+        }
+        .selected-good {
+            border-color: #22c55e !important;
+            background-color: #f0fdf4 !important;
+        }
+        .selected-bad {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-2xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-10">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">Sua Opinião Importa</h1>
+            <p class="text-slate-600">Como foi sua experiência com nosso atendimento?</p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8">
+            <div class="flex gap-4 mb-6">
+                <!-- Opção: Bom Atendimento -->
+                <button id="btnGood" onclick="setSentiment('good')" class="rating-card flex-1 p-4 border-2 border-slate-100 rounded-xl flex flex-col items-center gap-2 hover:border-green-200 focus:outline-none">
+                    <span class="text-3xl">😊</span>
+                    <span class="font-semibold text-slate-700">Gostei</span>
+                </button>
+                
+                <!-- Opção: Mau Atendimento -->
+                <button id="btnBad" onclick="setSentiment('bad')" class="rating-card flex-1 p-4 border-2 border-slate-100 rounded-xl flex flex-col items-center gap-2 hover:border-red-200 focus:outline-none">
+                    <span class="text-3xl">😟</span>
+                    <span class="font-semibold text-slate-700">Não Gostei</span>
+                </button>
+            </div>
+
+            <!-- Comentário -->
+            <div class="mb-4">
+                <label for="comment" class="block text-sm font-medium text-slate-700 mb-2">
+                    Conte-nos mais (máximo 50 palavras)
+                </label>
+                <textarea 
+                    id="comment" 
+                    rows="4" 
+                    class="w-full p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+                    placeholder="Descreva o que aconteceu..."
+                    oninput="validateWords()"
+                ></textarea>
+                <div class="flex justify-between mt-2">
+                    <span id="wordCountLabel" class="text-xs text-slate-500">Palavras: 0/50</span>
+                    <span id="warningMsg" class="text-xs text-red-500 hidden font-semibold">Limite de 50 palavras atingido!</span>
+                </div>
+            </div>
+
+            <button 
+                onclick="submitFeedback()" 
+                class="w-full bg-slate-800 text-white font-bold py-4 rounded-xl hover:bg-slate-900 transition-colors shadow-lg active:scale-[0.98]"
+            >
+                Enviar Avaliação
+            </button>
+        </div>
+
+        <!-- Histórico (Simulado) -->
+        <div class="space-y-4 mb-12">
+            <h2 class="text-lg font-bold text-slate-800 px-1 text-center">Avaliações Recentes</h2>
+            <div id="feedbackList" class="space-y-3">
+                <p class="text-slate-400 text-center py-4 italic">Nenhuma avaliação enviada ainda.</p>
+            </div>
+        </div>
+
+        <!-- Rodapé de Contatos (Referência de Farmácias/Mercados) -->
+        <div class="border-t border-slate-200 pt-8 mt-8">
+            <h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest text-center mb-6">Central de Atendimento</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs text-slate-600">
+                <div class="bg-white p-3 rounded-lg border border-slate-100 text-center">Drogasil / Drogal</div>
+                <div class="bg-white p-3 rounded-lg border border-slate-100 text-center">Mundo Verde</div>
+                <div class="bg-white p-3 rounded-lg border border-slate-100 text-center">Zona Cerealista</div>
+                <div class="bg-white p-3 rounded-lg border border-slate-100 text-center">Herbarium</div>
+                <div class="bg-white p-3 rounded-lg border border-slate-100 text-center">Minas-Brasil</div>
+                <div class="bg-white p-3 rounded-lg border border-slate-100 text-center">Raiz Nativa</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Sucesso -->
+    <div id="successModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-sm w-full text-center">
+            <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">✓</div>
+            <h3 class="text-xl font-bold mb-2">Obrigado!</h3>
+            <p class="text-slate-600 mb-6">Sua avaliação foi registrada com sucesso.</p>
+            <button onclick="closeModal()" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedSentiment = null;
+        const commentEl = document.getElementById('comment');
+        const wordCountLabel = document.getElementById('wordCountLabel');
+        const warningMsg = document.getElementById('warningMsg');
+        const feedbackList = document.getElementById('feedbackList');
+
+        function setSentiment(type) {
+            selectedSentiment = type;
+            document.getElementById('btnGood').classList.remove('selected-good');
+            document.getElementById('btnBad').classList.remove('selected-bad');
+            
+            if(type === 'good') {
+                document.getElementById('btnGood').classList.add('selected-good');
+            } else {
+                document.getElementById('btnBad').classList.add('selected-bad');
+            }
+        }
+
+        function validateWords() {
+            const text = commentEl.value.trim();
+            const words = text ? text.split(/\s+/) : [];
+            const count = words.length;
+
+            if (count > 50) {
+                const limitedText = words.slice(0, 50).join(' ');
+                commentEl.value = limitedText;
+                wordCountLabel.innerText = `Palavras: 50/50`;
+                warningMsg.classList.remove('hidden');
+            } else {
+                wordCountLabel.innerText = `Palavras: ${count}/50`;
+                warningMsg.classList.add('hidden');
+            }
+        }
+
+        function submitFeedback() {
+            const text = commentEl.value.trim();
+            if (!selectedSentiment) {
+                alertBox("Por favor, selecione se gostou ou não do atendimento.");
+                return;
+            }
+            if (!text) {
+                alertBox("Por favor, escreva um pequeno comentário.");
+                return;
+            }
+
+            addFeedbackToUI(selectedSentiment, text);
+            commentEl.value = '';
+            setSentiment(null);
+            validateWords();
+            document.getElementById('successModal').classList.remove('hidden');
+        }
+
+        function addFeedbackToUI(sentiment, text) {
+            if (feedbackList.querySelector('p.italic')) {
+                feedbackList.innerHTML = '';
+            }
+
+            const div = document.createElement('div');
+            div.className = 'bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-start gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500';
+            
+            const icon = sentiment === 'good' ? '😊' : '😟';
+            const colorClass = sentiment === 'good' ? 'text-green-600' : 'text-red-600';
+            const label = sentiment === 'good' ? 'Gostou' : 'Não Gostou';
+
+            div.innerHTML = `
+                <div class="text-2xl">${icon}</div>
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs font-bold uppercase tracking-wider ${colorClass}">${label}</span>
+                        <span class="text-xs text-slate-400">• Agora mesmo</span>
+                    </div>
+                    <p class="text-slate-700 text-sm leading-relaxed">${text}</p>
+                </div>
+            `;
+            
+            feedbackList.prepend(div);
+        }
+
+        function alertBox(msg) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = "fixed top-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl z-[100] transition-all";
+            alertDiv.innerText = msg;
+            document.body.appendChild(alertDiv);
+            setTimeout(() => alertDiv.remove(), 3000);
+        }
+
+        function closeModal() {
+            document.getElementById('successModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
