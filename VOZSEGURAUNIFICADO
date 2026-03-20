@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voz Segura - Sistema Unificado e Gestão de Pessoal</title>
+    <style>
+        :root {
+            --fundo: #0f172a;
+            --card: #1e293b;
+            --primaria: #3b82f6;
+            --texto: #f8fafc;
+            --borda: #334155;
+            --alerta: #ef4444;
+            --sucesso: #22c55e;
+            --acao: #f59e0b;
+            --fadiga: #a855f7;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--fundo);
+            color: var(--texto);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--card);
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 2px solid var(--primaria);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+        }
+
+        .status-servidor {
+            display: flex;
+            justify-content: space-around;
+            background: #1e293b;
+            padding: 10px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--borda);
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+
+        .modo-seletor {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: #111827;
+        }
+
+        .btn-modo {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--borda);
+            background: transparent;
+            color: var(--texto);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+
+        .btn-modo.active {
+            background: var(--primaria);
+            border-color: var(--primaria);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 1rem auto;
+            padding: 0 1rem;
+            flex-grow: 1;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--borda);
+            margin-bottom: 1.5rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--primaria);
+            text-transform: uppercase;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: #0f172a;
+            border: 1px solid var(--borda);
+            color: white;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.95rem;
+        }
+
+        .painel-transcricao {
+            background: #000;
+            border: 2px solid var(--primaria);
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            color: #22d3ee;
+            margin: 1rem 0;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .controles {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: 0.2s;
+        }
+
+        .btn-rec { background: var(--alerta); color: white; }
+        .btn-stop { background: var(--borda); color: white; display: none; }
+        .btn-save { background: var(--sucesso); color: white; }
+
+        .modal-alerta {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1e293b;
+            padding: 30px;
+            border: 3px solid var(--acao);
+            border-radius: 15px;
+            z-index: 100;
+            text-align: center;
+            display: none;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            z-index: 90;
+        }
+
+        .hidden { display: none; }
+
+        /* Estilos específicos por modo */
+        .modo-viatura { border-left: 5px solid var(--alerta); }
+        .modo-estabelecimento { border-left: 5px solid var(--acao); }
+        .modo-delegacia { border-left: 5px solid var(--primaria); }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 style="margin:0; font-size: 1.4rem;">🛡️ VOZ SEGURA: UNIFICADO</h1>
+    <p style="margin:5px 0 0; font-size: 0.8rem; opacity: 0.7;">Gestão de Operações e Bem-Estar do Efetivo</p>
+</header>
+
+<!-- Barra de Status do Trabalhador -->
+<div class="status-servidor">
+    <span>OPERADOR: <strong id="nomeOp">Agente Silva</strong></span>
+    <span>OCORRÊNCIAS HOJE: <strong id="countOcorrencias">0</strong></span>
+    <span>ESTADO: <span id="badgeEstado" class="badge" style="background: var(--sucesso)">PRONTO</span></span>
+    <span>TURNO RESTANTE: <strong id="timerTurno">06:00:00</strong></span>
+</div>
+
+<div class="modo-seletor">
+    <button class="btn-modo active" onclick="mudarModo('viatura', this)">🚑 VIATURA</button>
+    <button class="btn-modo" onclick="mudarModo('estabelecimento', this)">🏢 LOCAL/LOJA</button>
+    <button class="btn-modo" onclick="mudarModo('delegacia', this)">⚖️ DELEGACIA</button>
+</div>
+
+<main class="container">
+    <div id="formContainer" class="card modo-viatura">
+        <h2 id="tituloModo" style="margin-top:0; font-size: 1.1rem; color: var(--primaria);">PROTOCOLO DE EMERGÊNCIA (VIATURA)</h2>
+        
+        <div class="grid">
+            <div>
+                <label>Nome da Vítima</label>
+                <input type="text" id="nomeVitima" placeholder="Identificação Inicial">
+            </div>
+            <div>
+                <label>Estado da Vítima</label>
+                <select id="estadoVitima">
+                    <option>Estável</option>
+                    <option>Choque</option>
+                    <option>Ferimentos Graves</option>
+                    <option>Desorientada</option>
+                </select>
+            </div>
+            <div>
+                <label>Hora de Chegada</label>
+                <input type="time" id="horaChegada">
+            </div>
+        </div>
+
+        <div id="camposExtra" class="hidden">
+            <div class="grid">
+                <div>
+                    <label>Ruído Ambiental</label>
+                    <select id="ruido">
+                        <option>Silencioso</option>
+                        <option>Barulhento</option>
+                        <option>Gritos/Tumulto</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Sinais de Luta</label>
+                    <select id="luta">
+                        <option>Não</option>
+                        <option>Sim</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <label>Depoimento Transcrito (Norma Culta)</label>
+        <div id="painelVoz" class="painel-transcricao">Aguardando comando de voz...</div>
+
+        <div class="controles">
+            <button id="btnStart" class="btn btn-rec" onclick="startRec()">🎙️ Gravar</button>
+            <button id="btnStop" class="btn btn-stop" onclick="stopRec()">⏹️ Concluir</button>
+            <button class="btn btn-save" onclick="exportarRelatorio()">💾 Gerar Ata</button>
+        </div>
+    </div>
+</main>
+
+<!-- Modal de Fadiga/Troca de Turno -->
+<div class="overlay" id="overlay"></div>
+<div class="modal-alerta" id="modalAlerta">
+    <h2 style="color: var(--alerta)">ALERTA DE FADIGA OPERACIONAL</h2>
+    <p id="msgAlerta">Detectamos um alto volume de ocorrências traumáticas. Sua saúde mental é prioridade.</p>
+    <p><strong>Deseja solicitar troca de turno ou pausa de 15 min?</strong></p>
+    <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="btn" style="background:var(--sucesso); color:white;" onclick="fecharAlerta()">Continuar (Estou bem)</button>
+        <button class="btn" style="background:var(--acao); color:white;" onclick="solicitarTroca()">Solicitar Troca</button>
+    </div>
+</div>
+
+<script>
+    let modoAtual = 'viatura';
+    let ocorrencias = 0;
+    let tempoRestanteSegundos = 6 * 3600;
+
+    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recognition.lang = 'pt-BR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    let finalStr = "";
+
+    // Timer de Turno
+    setInterval(() => {
+        tempoRestanteSegundos--;
+        const h = Math.floor(tempoRestanteSegundos / 3600).toString().padStart(2,'0');
+        const m = Math.floor((tempoRestanteSegundos % 3600) / 60).toString().padStart(2,'0');
+        const s = (tempoRestanteSegundos % 60).toString().padStart(2,'0');
+        document.getElementById('timerTurno').innerText = `${h}:${m}:${s}`;
+        
+        if(tempoRestanteSegundos <= 3600) { // Última hora
+            document.getElementById('badgeEstado').innerText = "TURNO FINALIZANDO";
+            document.getElementById('badgeEstado').style.background = var(--acao);
+        }
+    }, 1000);
+
+    function mudarModo(modo, btn) {
+        modoAtual = modo;
+        document.querySelectorAll('.btn-modo').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const container = document.getElementById('formContainer');
+        const camposExtra = document.getElementById('camposExtra');
+        container.className = 'card modo-' + modo;
+        document.getElementById('tituloModo').innerText = modo.toUpperCase() + (modo==='viatura' ? " - EMERGÊNCIA" : modo==='estabelecimento' ? " - INSPEÇÃO" : " - INQUÉRITO");
+        modo === 'estabelecimento' ? camposExtra.classList.remove('hidden') : camposExtra.classList.add('hidden');
+    }
+
+    recognition.onresult = (e) => {
+        let interim = "";
+        for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) finalStr += e.results[i][0].transcript + ". ";
+            else interim += e.results[i][0].transcript;
+        }
+        document.getElementById('painelVoz').innerHTML = `<strong>${finalStr}</strong><span style="color:#64748b">${interim}</span>`;
+    };
+
+    function startRec() {
+        if(!document.getElementById('horaChegada').value) {
+            const now = new Date();
+            document.getElementById('horaChegada').value = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
+        }
+        recognition.start();
+        document.getElementById('btnStart').style.display = 'none';
+        document.getElementById('btnStop').style.display = 'block';
+    }
+
+    function stopRec() {
+        recognition.stop();
+        document.getElementById('btnStart').style.display = 'block';
+        document.getElementById('btnStop').style.display = 'none';
+    }
+
+    function exportarRelatorio() {
+        ocorrencias++;
+        document.getElementById('countOcorrencias').innerText = ocorrencias;
+        
+        // Lógica de fadiga: Se mais de 3 ocorrências em pouco tempo, alerta.
+        if(ocorrencias >= 3) {
+            document.getElementById('badgeEstado').innerText = "FADIGA DETECTADA";
+            document.getElementById('badgeEstado').style.background = "#ef4444";
+            mostrarAlerta();
+        }
+
+        // Simulação de Exportação
+        alert("Ata Judicial gerada e enviada para o banco de dados central.");
+        finalStr = "";
+        document.getElementById('painelVoz').innerText = "Aguardando comando de voz...";
+    }
+
+    function mostrarAlerta() {
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('modalAlerta').style.display = 'block';
+    }
+
+    function fecharAlerta() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('modalAlerta').style.display = 'none';
+    }
+
+    function solicitarTroca() {
+        alert("Solicitação enviada ao Comando Central. Aguarde a confirmação da viatura reserva.");
+        fecharAlerta();
+    }
+</script>
+
+</body>
+</html>
